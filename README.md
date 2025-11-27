@@ -1,7 +1,10 @@
 # Customer-Churn
+
 Projet de machine learning visant à prédire le désabonnement des clients d'une entreprise de télécommunications, également appelé "customer churn".
+
 ![alt text](image_customer_churn.png)
-# Projet de Machine Learning : Prédiction du Désabonnement Client (Customer Churn)
+
+## Projet de Machine Learning : Prédiction du Désabonnement Client (Customer Churn)
 
 Ce projet vise à construire un modèle de Machine Learning pour **prédire le désabonnement des clients (Customer Churn)** au sein d'une entreprise de télécommunication. La prédiction du taux de désabonnement est cruciale pour toute entreprise, car **le coût de rétention d'un client existant est bien inférieur à celui de l'acquisition d'un nouveau client**.
 
@@ -148,6 +151,43 @@ Cette phase consiste à entraîner divers algorithmes, évaluer leurs performanc
     - Après avoir comparé les performances sur les **données de validation**, le **modèle de Régression Logistique** a montré la meilleure performance (F1-score de 0.61 sur la classe positive).
     - Ce meilleur modèle a ensuite été évalué sur les **données de test** (jamais vues) pour confirmer sa capacité de généralisation.
     - La performance sur les données de test (F1-score de 0.64) était relativement proche de celle sur les données de validation, avec même une légère amélioration.
+
+### 6.1 Tableau récapitulatif des métriques (validation)
+
+Un tableau récapitulatif est généré dans le notebook pour comparer les modèles sur le jeu de **validation** à l’aide des métriques suivantes:
+
+- `accuracy`
+- `precision_pos` (précision de la classe positive `Churn=Yes`)
+- `recall_pos` (rappel de la classe positive)
+- `f1_pos` (F1-score de la classe positive, métrique clé)
+
+Il agrège les résultats des meilleurs estimateurs issus des `GridSearchCV` (LogisticRegression, RandomForest, MLPClassifier, SVM) et les trie par `f1_pos` décroissant afin de faciliter la sélection.
+
+### 6.2 Évaluation finale sur test (modèle retenu)
+
+La **Régression Logistique** (meilleur `C=10`) est évaluée sur le jeu de **test** avec les mêmes métriques. Les performances sont cohérentes avec la validation (F1 classe positive ≈ 0.62–0.64), indiquant une **bonne généralisation**.
+
+### 6.3 Sauvegarde du pipeline et prédiction
+
+Le pipeline complet est sauvegardé dans le fichier `model_pipeline.joblib` et contient:
+
+- `feature_names`: les variables utilisées à l’entraînement
+- `scaler`: l’instance de `MinMaxScaler` ajustée
+- `model`: le meilleur estimateur (Régression Logistique)
+
+Deux chemins d’utilisation sont proposés:
+
+- Dans le notebook: la fonction `predict_from_dataframe(df_raw)` applique le même prétraitement (encodages, one-hot, transformation `sqrt` de `TotalCharges`, normalisation) puis renvoie `prediction` et `proba_churn`.
+
+- En ligne de commande (script CLI): un script `predict.py` permet de prédire à partir d’un CSV brut.
+
+Exemple d’exécution (Windows):
+
+```bash
+python predict.py --input data.csv --output preds.csv --pipeline model_pipeline.joblib
+```
+
+Le fichier de sortie `preds.csv` contient `prediction` (0/1) et `proba_churn` (si disponible). Si la colonne `customerID` est présente dans le CSV d’entrée, elle est recopiée dans la sortie.
 
 ## 7. Conclusion et Perspectives
 
