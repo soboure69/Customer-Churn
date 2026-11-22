@@ -13,6 +13,7 @@
 | RFE | 28 → 14 variables | 30 → 15 variables |
 | `predict.py` | plantait (colonnes du scaler ≠ colonnes du modèle) | rejoue exactement le notebook |
 | F1 en validation croisée (0,77 à 0,92) | lu comme une performance | gonflé par le sur-échantillonnage fait avant la CV |
+| Étape 2 (commit `9789887`) | sur-échantillonnage avant la CV, LR `C=10`, seuil non étudié | CV sans fuite (0,62 à 0,64), LR pondérée `C=1`, seuil 0,5 enregistré dans le pipeline ; F1 val 0,619, test 0,628 |
 
 ## Ce que je retiens
 
@@ -33,7 +34,8 @@
 
 ## Prochaine étape
 
-- Validation croisée propre (`class_weight='balanced'`), puis choix du seuil selon le coût d'une offre et celui d'un départ manqué.
+- Faite le 22/11/2026 : validation croisée sans fuite et étude du seuil (étape 2 du notebook). Un scénario de coûts **fictif** donne un seuil de 0,56 ; le pipeline garde 0,5 par défaut.
+- À faire : obtenir auprès du métier le taux de succès d'une offre de rétention et l'horizon de valeur d'un client. Selon ces deux chiffres, le seuil va de 0,23 à 0,94.
 
 ---
 

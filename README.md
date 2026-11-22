@@ -69,6 +69,17 @@ Le seuil est étudié sur des probabilités **hors pli** du train : chaque clien
 
 Le seuil de 0,5 correspond à un rapport d'environ 5, ou à une capacité de contact de 40 % des clients. Pour l'ajuster, il faut estimer `c_départ ≈ taux de succès de l'offre × valeur du client sur la période`, et le coût d'une offre.
 
+**Scénario de coûts fictif** (section 2.5 du notebook). Hypothèses, en dollars comme `MonthlyCharges` : contact à 5 $, un mois de facture offert à chaque client contacté, 30 % des vrais partants retenus par l'offre, 12 mois de facture perdus par départ. Le calcul est fait client par client. Le seuil de gain maximal, choisi sur les probabilités hors pli du train, est **0,56**.
+
+| Stratégie (validation) | Clients contactés | Précision | Rappel | Gain net |
+|---|---:|---:|---:|---:|
+| Ne contacter personne | 0 % | – | 0 | 0 $ |
+| Seuil 0,5 (pipeline) | 38 % | 0,524 | 0,757 | 35 424 $ |
+| Seuil 0,56 (scénario) | 33 % | 0,561 | 0,701 | 35 184 $ |
+| Contacter tout le monde | 100 % | 0,266 | 1 | 1 488 $ |
+
+Dans ce scénario, 0,5 et 0,56 rapportent presque autant ; 0,56 contacte 5 points de clients en moins. Selon le taux de succès (20 à 40 %) et l'horizon (6 à 24 mois), le seuil optimal va de 0,23 à 0,94 : ces deux chiffres sont à obtenir auprès du métier. Le pipeline garde 0,5 par défaut.
+
 ## Pipeline
 
 1. Les 11 `TotalCharges` vides (0,16 % des lignes) sont supprimés, puis la colonne est passée en numérique et transformée par racine carrée.
@@ -89,7 +100,13 @@ Le fichier `model_pipeline.joblib` contient le scaler, l'ordre des colonnes, la 
 python predict.py --input data.csv --output preds.csv --pipeline model_pipeline.joblib
 ```
 
-La sortie contient `customerID` lorsqu'il est présent, `prediction` (0/1, soit `proba_churn ≥ seuil`) et `proba_churn`. Les lignes dont `TotalCharges` est illisible sont écartées et signalées, sans décaler les identifiants. La dernière cellule du notebook vérifie que `predict.py` retrouve le F1 du test.
+Pour appliquer un autre seuil, par exemple celui du scénario fictif :
+
+```bash
+python predict.py --input data.csv --output preds.csv --threshold 0.56
+```
+
+La sortie contient `customerID` lorsqu'il est présent, `prediction` (0/1, soit `proba_churn ≥ seuil`) et `proba_churn`. Sans `--threshold`, le seuil est celui du pipeline (0,5). Les lignes dont `TotalCharges` est illisible sont écartées et signalées, sans décaler les identifiants. La dernière cellule du notebook vérifie que `predict.py` retrouve le F1 du test.
 
 Dépendances figées dans `requirements.txt` (Python 3.13, scikit-learn 1.7.1, imbalanced-learn 0.14.0, pandas 2.3.1).
 
@@ -97,9 +114,9 @@ Dépendances figées dans `requirements.txt` (Python 3.13, scikit-learn 1.7.1, i
 
 - Le jeu est une photo : `tenure` et `TotalCharges` des clients partis s'arrêtent à leur départ. Le modèle décrit ce snapshot. Il ne date pas une prédiction avant une fenêtre de churn.
 - `TotalCharges` est presque égal à `tenure × MonthlyCharges` (corrélation 0,9996). Plusieurs colonnes « No internet service » sont identiques. Les coefficients ne décrivent donc pas chacun un effet séparé.
-- Le seuil de 0,5 ne repose sur aucun coût réel. Les tableaux ci-dessus servent à le déplacer quand ces coûts seront connus.
+- Le seuil de 0,5 ne repose sur aucun coût réel, et le scénario de la section 2.5 est fictif. Les tableaux ci-dessus servent à déplacer le seuil quand les vrais coûts seront connus.
 - Le jeu de test a été consulté pendant la première approche et pendant la préparation de l'étape 2. Son score n'a servi à aucun choix, mais ce n'est plus un test entièrement neuf.
-- Relancer le notebook de bout en bout prend environ 27 minutes, dont environ 13 pour la grille SVM de la première approche et 5 pour la comparaison de l'étape 2 (mesuré sur une machine à 2 cœurs).
+- Relancer le notebook de bout en bout prend environ 28 minutes, dont environ 13 pour la grille SVM de la première approche et 5 pour la comparaison de l'étape 2 (mesuré sur une machine à 2 cœurs).
 
 ## Sources
 

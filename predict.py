@@ -81,12 +81,17 @@ def _bundle_names(bundle: dict, scaler, model) -> tuple[list[str], list[str]]:
     return scaler_names, model_names
 
 
-def predict_from_dataframe(df_raw: pd.DataFrame, pipeline: str | Path = "model_pipeline.joblib") -> pd.DataFrame:
+def predict_from_dataframe(
+    df_raw: pd.DataFrame,
+    pipeline: str | Path = "model_pipeline.joblib",
+    threshold: float | None = None,
+) -> pd.DataFrame:
     """Score raw customer rows with the saved churn pipeline.
 
     Rows whose TotalCharges cannot be read are omitted. The returned index
-    is the index of the rows that were scored. If the bundle stores a
-    "threshold", prediction is proba_churn >= threshold.
+    is the index of the rows that were scored. prediction is
+    proba_churn >= threshold, where threshold is the argument if given,
+    otherwise the "threshold" stored in the bundle.
     """
     bundle = joblib.load(pipeline)
     scaler = bundle["scaler"]
@@ -105,7 +110,10 @@ def predict_from_dataframe(df_raw: pd.DataFrame, pipeline: str | Path = "model_p
     model_input = scaled[model_names]
     if not hasattr(model, "feature_names_in_"):
         model_input = model_input.to_numpy()  # modèle entraîné sans noms de colonnes (étape d'un Pipeline)
-    threshold = bundle.get("threshold")
+    if threshold is None:
+        threshold = bundle.get("threshold")
+    elif not 0.0 <= threshold <= 1.0:
+        raise ValueError(f"Le seuil doit être entre 0 et 1 : {threshold}")
     if hasattr(model, "predict_proba"):
         proba = model.predict_proba(model_input)[:, 1]
         if threshold is None:
@@ -131,6 +139,12 @@ def main() -> None:
     parser.add_argument("--input", required=True, help="Path to input CSV with raw customer data")
     parser.add_argument("--output", required=True, help="Path to output CSV for predictions")
     parser.add_argument("--pipeline", default="model_pipeline.joblib", help="Path to saved pipeline bundle")
+    parser.add_argument(
+        "--threshold",
+        type=float,
+        default=None,
+        help="Decision threshold on proba_churn (default: the one stored in the pipeline, 0.5)",
+    )
     args = parser.parse_args()
 
     in_path = Path(args.input)
@@ -142,7 +156,7 @@ def main() -> None:
         raise FileNotFoundError(f"Pipeline file not found: {pipe_path}")
 
     df_raw = pd.read_csv(in_path)
-    predictions = predict_from_dataframe(df_raw, pipe_path)
+    predictions = predict_from_dataframe(df_raw, pipe_path, threshold=args.threshold)
     output = predictions
     if "customerID" in df_raw.columns:
         output = pd.concat([df_raw.loc[predictions.index, ["customerID"]], predictions], axis=1)
