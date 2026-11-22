@@ -1,6 +1,6 @@
 # Customer Churn
 
-Prédiction du désabonnement de clients d'un opérateur télécom, à partir du jeu public de 7 043 clients et 21 variables. La cible `Churn` est binaire. Après retrait de 11 montants `TotalCharges` illisibles, il reste 7 032 clients, dont 26,5 % sont partis.
+Prédiction du désabonnement de clients d'un opérateur télécom, à partir du jeu public de 7 043 clients et 21 variables. La cible `Churn` est binaire. Après retrait de 11 montants `TotalCharges` illisibles, il reste 7 032 clients, dont 26,6 % sont partis.
 
 ![Illustration du désabonnement client](image_customer_churn.png)
 
@@ -17,10 +17,10 @@ Les trois autres modèles, au F1 de validation : forêt aléatoire 0,551, MLP 0,
 
 Sur le test, deux références cadrent ce score :
 
-- un tirage aléatoire calé sur la proportion de churn du train donne un F1 d'environ **0,26** ;
+- un tirage aléatoire calé sur la proportion de churn du train donne un F1 d'environ **0,27** ;
 - la règle « contrat mensuel = churn » donne un F1 de **0,564**.
 
-La logistique apporte environ **6 points de F1** par rapport à cette règle. L'exactitude de 0,75 est à deux points d'une prédiction constante « le client reste » (0,735). Avec un rappel de 0,81 et une précision de 0,51, environ un client signalé sur deux part réellement.
+La logistique apporte environ **6 points de F1** par rapport à cette règle. L'exactitude de 0,75 est à deux points d'une prédiction constante « le client reste » (0,734). Avec un rappel de 0,81 et une précision de 0,51, environ un client signalé sur deux part réellement.
 
 ## Pipeline
 
@@ -51,7 +51,7 @@ Dépendances figées dans `requirements.txt` (Python 3.13, scikit-learn 1.7.1, p
 - Le jeu est une photo : `tenure` et `TotalCharges` des clients partis s'arrêtent à leur départ. Le modèle décrit ce snapshot. Il ne date pas une prédiction avant une fenêtre de churn.
 - `TotalCharges` est presque égal à `tenure × MonthlyCharges` (corrélation 0,9996). Plusieurs colonnes « No internet service » sont identiques. La RFE réduit le modèle de 30 à 15 variables (F1 de validation 0,623), sans rendre chaque coefficient lisible isolément.
 - Le seuil de décision reste 0,5. Il n'est pas choisi selon le coût d'une offre et le coût d'un départ manqué.
-- Relancer le notebook de bout en bout prend environ **75 minutes**, dont environ **66** pour la grille SVM (`probability=True`).
+- Relancer le notebook de bout en bout prend environ 22 minutes, dont environ 13 pour la grille SVM (mesuré sur une machine à 2 cœurs).
 
 Une validation croisée avec `class_weight='balanced'`, sans sur-échantillonnage préalable, et le réglage du seuil sont la prochaine étape. Ils ne sont pas dans ce gel, pour ne pas mélanger le correctif et un nouveau choix d'hyperparamètres.
 

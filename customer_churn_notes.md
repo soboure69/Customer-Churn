@@ -1,3 +1,42 @@
+> **Notes de travail.** Ce fichier garde la trace de mon travail sur le projet (version de novembre 2025). Plusieurs chiffres ci-dessous sont périmés : la référence est le [README](README.md) et le notebook réexécuté le 22/11/2026.
+
+## Journal des corrections — 22 novembre 2026
+
+| Élément | Avant | Après correction |
+|---|---|---|
+| `gender` | 0 pour tous les clients (`'female'` ≠ `'Female'`) | 1 = Female, coefficient ≈ +0,13 |
+| `SeniorCitizen` | 0 pour tous (comparé au texte `'Yes'`) | gardée en 0/1, coefficient ≈ +0,27 |
+| Sélection des variables | forêt sans graine, 28 variables | graine 111, les 30 variables sont gardées |
+| Lignes supprimées | « < 0,05 % » | 0,16 % (11 / 7 043) |
+| F1 validation (logistique) | 0,61 | 0,622 |
+| F1 test (logistique) | 0,64 | 0,628 |
+| RFE | 28 → 14 variables | 30 → 15 variables |
+| `predict.py` | plantait (colonnes du scaler ≠ colonnes du modèle) | rejoue exactement le notebook |
+| F1 en validation croisée (0,77 à 0,92) | lu comme une performance | gonflé par le sur-échantillonnage fait avant la CV |
+
+## Ce que je retiens
+
+- Un encodage peut échouer sans erreur. Vérifier `describe()` après chaque transformation : un écart-type nul signale une colonne constante.
+- Comparer des textes exactement (`== 'Female'`), sans supposer la casse.
+- Fixer une graine partout où il y a du hasard (découpage, forêt, sélection), sinon les chiffres changent d'une exécution à l'autre.
+- Sur-échantillonner **à l'intérieur** de chaque pli de validation croisée (pipeline `imblearn`), ou utiliser `class_weight='balanced'`.
+- Toujours comparer à une référence simple. Ici, la règle « contrat mensuel = churn » atteint déjà 0,56 de F1, contre 0,63 pour le modèle.
+- Sauvegarder dans le pipeline les colonnes vues par chaque étape (scaler, modèle).
+- Réexécuter le notebook de haut en bas avant de recopier des chiffres dans le README.
+
+## À savoir expliquer en entretien
+
+- Pourquoi le F1 de la classe churn, et pas l'exactitude (0,757, contre 0,734 pour « tout le monde reste »).
+- Pourquoi la régression logistique : meilleure en validation, et lisible.
+- Ce que vaut 0,63 : environ 6 points de plus qu'une règle en une ligne.
+- Les limites : données figées à un instant, `TotalCharges` ≈ `tenure × MonthlyCharges`, seuil de décision fixé à 0,5.
+
+## Prochaine étape
+
+- Validation croisée propre (`class_weight='balanced'`), puis choix du seuil selon le coût d'une offre et celui d'un départ manqué.
+
+---
+
 # Customer-Churn
 
 Projet de machine learning visant à prédire le désabonnement des clients d'une entreprise de télécommunications, également appelé "customer churn".
