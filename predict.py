@@ -85,7 +85,8 @@ def predict_from_dataframe(df_raw: pd.DataFrame, pipeline: str | Path = "model_p
     """Score raw customer rows with the saved churn pipeline.
 
     Rows whose TotalCharges cannot be read are omitted. The returned index
-    is the index of the rows that were scored.
+    is the index of the rows that were scored. If the bundle stores a
+    "threshold", prediction is proba_churn >= threshold.
     """
     bundle = joblib.load(pipeline)
     scaler = bundle["scaler"]
@@ -101,10 +102,19 @@ def predict_from_dataframe(df_raw: pd.DataFrame, pipeline: str | Path = "model_p
         columns=scaler_names,
         index=features.index,
     )
-    scored = model.predict(scaled[model_names])
-    output = pd.DataFrame({"prediction": scored}, index=features.index)
+    model_input = scaled[model_names]
+    if not hasattr(model, "feature_names_in_"):
+        model_input = model_input.to_numpy()  # modèle entraîné sans noms de colonnes (étape d'un Pipeline)
+    threshold = bundle.get("threshold")
     if hasattr(model, "predict_proba"):
-        output["proba_churn"] = model.predict_proba(scaled[model_names])[:, 1]
+        proba = model.predict_proba(model_input)[:, 1]
+        if threshold is None:
+            scored = model.predict(model_input)
+        else:
+            scored = (proba >= threshold).astype(int)
+        output = pd.DataFrame({"prediction": scored, "proba_churn": proba}, index=features.index)
+    else:
+        output = pd.DataFrame({"prediction": model.predict(model_input)}, index=features.index)
     return output
 
 
